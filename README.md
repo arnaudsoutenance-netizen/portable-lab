@@ -220,3 +220,17 @@ MIT License — See [LICENSE](LICENSE)
 ---
 
 *Tested on 2026-10-01 with Open5GS v2.7 + srsRAN 23.11 + bladeRF xA4*
+
+## 📸 Lab Photo
+
+![Architecture Diagram](images/architecture_diagram.png)
+
+## 📖 Complete Setup Guide
+
+For detailed configuration including:
+- Subscriber data (IMSI, K, OPC)
+- IMS configuration
+- VoLTE call flow
+- Step-by-step handover procedure
+
+See: [docs/COMPLETE_SETUP.md](docs/COMPLETE_SETUP.md)
