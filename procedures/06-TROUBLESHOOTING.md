@@ -1,86 +1,86 @@
 # 06 — Troubleshooting
 
-## Problèmes courants et solutions
+## Common Issues and Solutions
 
-### 1. Pas de Handover déclenché
+### 1. No Handover Triggered
 
-#### Symptôme
-L'UE reste sur la même cellule malgré le déplacement.
+#### Symptom
+UE stays on the same cell despite movement.
 
-#### Causes et solutions
+#### Causes and Solutions
 
-| Cause | Diagnostic | Solution |
-|-------|------------|----------|
-| TAC différent | `grep tac rr*.conf` | Mettre le même TAC sur les 2 eNB |
-| ho_active = false | `grep ho_active rr*.conf` | Mettre `ho_active = true` |
-| meas_cell_list vide | Vérifier config | Ajouter la cellule voisine |
-| EARFCN différent | Vérifier dl_earfcn | Même fréquence sur les 2 eNB |
-| Signal trop fort | RSRP > -70 dBm | Éloigner l'UE ou réduire TX |
+| Cause | Diagnosis | Solution |
+|-------|-----------|----------|
+| Different TAC | `grep tac rr*.conf` | Set same TAC on both eNBs |
+| ho_active = false | `grep ho_active rr*.conf` | Set `ho_active = true` |
+| Empty meas_cell_list | Check config | Add neighbor cell |
+| Different EARFCN | Check dl_earfcn | Same frequency on both eNBs |
+| Signal too strong | RSRP > -70 dBm | Move UE away or reduce TX |
 
-#### Commande de diagnostic
+#### Diagnostic Command
 
 ```bash
-# Vérifier la config des 2 eNB
+# Check config on both eNBs
 grep -E "tac|ho_active|dl_earfcn|pci" /tmp/rr_enb1_ho.conf
 grep -E "tac|ho_active|dl_earfcn|pci" /tmp/rr_enb2_ho.conf
 ```
 
 ### 2. Handover Cancel
 
-#### Symptôme
+#### Symptom
 ```
 WARNING: Action: S1 handover cancel
 ```
 
-#### Causes et solutions
+#### Causes and Solutions
 
 | Cause | Solution |
 |-------|----------|
-| Timeout | Augmenter `a3_time_to_trigger` (ex: 640 ms) |
-| Signal instable | Augmenter `a3_hysteresis` (ex: 2) |
-| Cible non joignable | Vérifier que eNB target est up |
-| Collision PCI | Vérifier PCI différents |
+| Timeout | Increase `a3_time_to_trigger` (e.g., 640 ms) |
+| Unstable signal | Increase `a3_hysteresis` (e.g., 2) |
+| Target unreachable | Verify target eNB is up |
+| PCI collision | Verify different PCIs |
 
-### 3. Appel coupé après Handover
+### 3. Call Drops After Handover
 
-#### Symptôme
-Le handover réussit mais l'appel VoLTE se coupe.
+#### Symptom
+Handover succeeds but VoLTE call disconnects.
 
-#### Causes et solutions
+#### Causes and Solutions
 
-| Cause | Diagnostic | Solution |
-|-------|------------|----------|
-| Bearer IMS perdu | Logs MME `EBI=6` | Vérifier QoS config |
-| Re-registration IMS | Logs P-CSCF | Vérifier IPsec |
-| RTP path broken | Wireshark | Vérifier RTPEngine |
+| Cause | Diagnosis | Solution |
+|-------|-----------|----------|
+| IMS bearer lost | MME logs `EBI=6` | Check QoS config |
+| IMS re-registration | P-CSCF logs | Check IPsec |
+| RTP path broken | Wireshark | Check RTPEngine |
 
 #### Diagnostic
 
 ```bash
-# Vérifier le bearer IMS
+# Check IMS bearer
 docker logs mme 2>&1 | grep -iE "EBI=6|ims" | tail -10
 
-# Vérifier IMS après handover
+# Check IMS after handover
 docker logs pcscf 2>&1 | grep -iE "error|failed" | tail -10
 ```
 
-### 4. UE ne voit pas la cellule voisine
+### 4. UE Doesn't See Neighbor Cell
 
-#### Symptôme
-Le téléphone ne détecte qu'une seule cellule.
+#### Symptom
+Phone only detects one cell.
 
-#### Causes et solutions
+#### Causes and Solutions
 
 | Cause | Solution |
 |-------|----------|
-| Même PCI | Mettre PCI différents |
-| root_seq_idx identique | Mettre des valeurs différentes |
-| Signal trop faible | Augmenter TX gain |
-| Antenne mal orientée | Vérifier antennes |
+| Same PCI | Set different PCIs |
+| Identical root_seq_idx | Set different values |
+| Signal too weak | Increase TX gain |
+| Misaligned antenna | Check antennas |
 
-### 5. eNB ne se connecte pas au MME
+### 5. eNB Doesn't Connect to MME
 
-#### Symptôme
+#### Symptom
 ```
 S1 Setup procedure failed
 ```
@@ -88,13 +88,13 @@ S1 Setup procedure failed
 #### Diagnostic
 
 ```bash
-# Vérifier connectivité
+# Check connectivity
 ping 192.168.1.102
 
-# Vérifier port S1AP
+# Check S1AP port
 nc -zv 192.168.1.102 36412
 
-# Vérifier logs MME
+# Check MME logs
 docker logs mme 2>&1 | grep -iE "error|refused"
 ```
 
@@ -102,39 +102,39 @@ docker logs mme 2>&1 | grep -iE "error|refused"
 
 | Cause | Solution |
 |-------|----------|
-| IP incorrecte | Vérifier `mme_addr` dans enb.conf |
+| Wrong IP | Check `mme_addr` in enb.conf |
 | Firewall | `sudo ufw allow 36412` |
 | MME down | `docker restart mme` |
-| PLMN mismatch | Vérifier MCC/MNC |
+| PLMN mismatch | Check MCC/MNC |
 
-### 6. TAU au lieu de Handover
+### 6. TAU Instead of Handover
 
-#### Symptôme
-L'UE fait un Tracking Area Update au lieu d'un Handover.
+#### Symptom
+UE performs Tracking Area Update instead of Handover.
 
 #### Cause
-TAC différent sur les 2 eNB.
+Different TAC on the 2 eNBs.
 
 #### Solution
 
 ```bash
-# Sur PC2, corriger le TAC
+# On PC2, fix the TAC
 sed -i 's/tac = 0x0002/tac = 0x0001/' /tmp/rr_enb2_ho.conf
 
-# Redémarrer eNB2
+# Restart eNB2
 sudo pkill srsenb
 sudo srsenb /tmp/enb2_handover.conf
 ```
 
-## Commandes de diagnostic
+## Diagnostic Commands
 
-### Logs en temps réel
+### Real-time Logs
 
 ```bash
 # MME - Handover
 docker logs -f mme 2>&1 | grep -iE "Handover|CellID"
 
-# MME - Tous les événements S1AP
+# MME - All S1AP events
 docker logs -f mme 2>&1 | grep -iE "S1AP|eNB"
 
 # P-CSCF - SIP
@@ -144,51 +144,51 @@ docker logs -f pcscf 2>&1 | grep -iE "INVITE|BYE|REGISTER"
 tail -f /tmp/enb1.log | grep -iE "RRC|Handover"
 ```
 
-### État du système
+### System Status
 
 ```bash
-# eNB connectés
+# Connected eNBs
 docker logs mme 2>&1 | grep "Number of eNBs" | tail -1
 
-# UE attachés
+# Attached UEs
 docker logs mme 2>&1 | grep "Attach complete" | tail -5
 
 # IMS registrations
 docker logs scscf 2>&1 | grep "registered" | tail -5
 ```
 
-### Capture réseau
+### Network Capture
 
 ```bash
-# S1AP uniquement
+# S1AP only
 sudo tcpdump -i any -w s1ap.pcap 'sctp port 36412'
 
-# Tout le trafic télécom
+# All telecom traffic
 sudo tcpdump -i any -w telecom.pcap \
   'sctp or udp port 2152 or port 5060'
 ```
 
-## Checklist de debug
+## Debug Checklist
 
 ```
-□ Les 2 eNB sont connectés au MME ?
-□ TAC identique sur les 2 eNB ?
-□ PCI différent sur les 2 eNB ?
-□ EARFCN identique ?
-□ ho_active = true ?
-□ meas_cell_list configurée ?
-□ L'UE voit les 2 cellules ?
-□ L'UE est enregistré IMS ?
-□ L'appel VoLTE fonctionne sans handover ?
+□ Are both eNBs connected to MME?
+□ Is TAC identical on both eNBs?
+□ Is PCI different on both eNBs?
+□ Is EARFCN identical?
+□ Is ho_active = true?
+□ Is meas_cell_list configured?
+□ Does UE see both cells?
+□ Is UE IMS registered?
+□ Does VoLTE call work without handover?
 ```
 
-## Contacts et ressources
+## Resources and Contacts
 
-- **Open5GS Issues** : https://github.com/open5gs/open5gs/issues
-- **srsRAN Issues** : https://github.com/srsran/srsRAN_4G/issues
-- **3GPP TS 23.401** : S1 Handover procedures
-- **3GPP TS 36.413** : S1AP specification
+- **Open5GS Issues**: https://github.com/open5gs/open5gs/issues
+- **srsRAN Issues**: https://github.com/srsran/srsRAN_4G/issues
+- **3GPP TS 23.401**: S1 Handover procedures
+- **3GPP TS 36.413**: S1AP specification
 
 ---
 
-⬅️ **Retour** : [05-TEST-HANDOVER.md](05-TEST-HANDOVER.md)
+⬅️ **Back**: [05-HANDOVER-TESTING.md](05-HANDOVER-TESTING.md)

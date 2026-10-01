@@ -5,13 +5,13 @@
 [![Open5GS](https://img.shields.io/badge/Open5GS-v2.7-green.svg)](https://open5gs.org/)
 [![srsRAN](https://img.shields.io/badge/srsRAN-v23.11-orange.svg)](https://www.srsran.com/)
 
-Configuration complète pour le **S1 Handover intra-frequency** sur un lab LTE privé avec appels **VoLTE** fonctionnels.
+Complete configuration for **S1 Handover intra-frequency** on a private LTE lab with functional **VoLTE** calls.
 
-## 🎯 Objectif
+## 🎯 Objective
 
-Permettre à un UE de changer de cellule (handover) **pendant un appel VoLTE** sans coupure, sur un réseau LTE privé composé de :
-- 2 eNodeB physiques (bladeRF xA4)
-- 1 Core Network Open5GS avec IMS (Kamailio)
+Enable a UE to change cells (handover) **during a VoLTE call** without interruption, on a private LTE network consisting of:
+- 2 physical eNodeBs (bladeRF xA4)
+- 1 Open5GS Core Network with IMS (Kamailio)
 
 ## 📊 Architecture
 
@@ -51,104 +51,104 @@ Permettre à un UE de changer de cellule (handover) **pendant un appel VoLTE** s
                    └─────────────┘
 ```
 
-## 📁 Structure du Repository
+## 📁 Repository Structure
 
 ```
 .
-├── README.md                    # Ce fichier
-├── configs/                     # Configurations eNodeB
-│   ├── enb1/                    # Config PC1 (eNB1)
-│   ├── enb2/                    # Config PC2 (eNB2)
+├── README.md                    # This file
+├── configs/                     # eNodeB configurations
+│   ├── enb1/                    # PC1 config (eNB1)
+│   ├── enb2/                    # PC2 config (eNB2)
 │   ├── rr1.conf                 # Radio Resource eNB1
 │   ├── rr2.conf                 # Radio Resource eNB2
-│   └── README.md                # Guide des configs
-├── procedures/                  # Procédures pas à pas
-│   ├── 01-PREREQUIS.md
+│   └── README.md                # Config guide
+├── procedures/                  # Step-by-step procedures
+│   ├── 01-PREREQUISITES.md
 │   ├── 02-INSTALLATION.md
-│   ├── 03-CONFIGURATION-ENB.md
-│   ├── 04-CONFIGURATION-MME.md
-│   ├── 05-TEST-HANDOVER.md
+│   ├── 03-ENB-CONFIGURATION.md
+│   ├── 04-MME-CONFIGURATION.md
+│   ├── 05-HANDOVER-TESTING.md
 │   └── 06-TROUBLESHOOTING.md
-├── docs/                        # Documentation détaillée
+├── docs/                        # Detailed documentation
 │   ├── ARCHITECTURE.md
 │   ├── HANDOVER_SEQUENCE.md
 │   └── VOLTE_IMS.md
-├── scripts/                     # Scripts utilitaires
+├── scripts/                     # Utility scripts
 │   ├── start_enb1.sh
 │   ├── start_enb2.sh
 │   └── volte-lab.sh
-├── logs/                        # Logs de référence
+├── logs/                        # Reference logs
 │   └── mme_handover_example.log
-├── diagrams/                    # Diagrammes
+├── diagrams/                    # Diagrams
 │   └── s1_handover_flow.md
-└── tests/                       # Tests et résultats
+└── tests/                       # Tests and results
     └── results/
 ```
 
 ## 🚀 Quick Start
 
-### 1. Prérequis
+### 1. Prerequisites
 
-- 2 PC Linux (Ubuntu 22.04 recommandé)
-- 2 bladeRF xA4 avec antennes
-- Open5GS + IMS (Kamailio) déployé
-- srsRAN 23.11+ compilé
+- 2 Linux PCs (Ubuntu 22.04 recommended)
+- 2 bladeRF xA4 with antennas
+- Open5GS + IMS (Kamailio) deployed
+- srsRAN 23.11+ compiled
 
-### 2. Configuration eNB1 (PC1)
+### 2. Configure eNB1 (PC1)
 
 ```bash
 cd configs/enb1
 sudo srsenb enb1_handover.conf
 ```
 
-### 3. Configuration eNB2 (PC2)
+### 3. Configure eNB2 (PC2)
 
 ```bash
 cd configs/enb2
 sudo srsenb enb2_handover.conf
 ```
 
-### 4. Test du Handover
+### 4. Test the Handover
 
 ```bash
-# Écouter les logs MME
+# Monitor MME logs
 docker logs -f mme 2>&1 | grep -iE "Handover|CellID"
 
-# Passer un appel VoLTE et déplacer le téléphone
+# Make a VoLTE call and move the phone
 ```
 
-## 📋 Configuration Clé
+## 📋 Key Configuration
 
-### Paramètres critiques pour le S1 Handover
+### Critical Parameters for S1 Handover
 
-| Paramètre | eNB1 | eNB2 | Importance |
+| Parameter | eNB1 | eNB2 | Importance |
 |-----------|------|------|------------|
-| `tac` | 0x0001 | **0x0001** | ⚠️ DOIT être identique |
-| `pci` | 1 | 2 | DOIT être différent |
-| `dl_earfcn` | 1450 | 1450 | DOIT être identique (intra-freq) |
-| `ho_active` | true | true | Active le handover |
+| `tac` | 0x0001 | **0x0001** | ⚠️ MUST be identical |
+| `pci` | 1 | 2 | MUST be different |
+| `dl_earfcn` | 1450 | 1450 | MUST be identical (intra-freq) |
+| `ho_active` | true | true | Enables handover |
 
-### Configuration meas_cell_list (rr.conf)
+### meas_cell_list Configuration (rr.conf)
 
 ```conf
 meas_cell_list =
 (
-  { eci = 0x19C01; dl_earfcn = 1450; pci = 2; }  # Cellule voisine
+  { eci = 0x19C01; dl_earfcn = 1450; pci = 2; }  # Neighbor cell
 );
 
 meas_report_desc =
 {
   a3_report_type = "RSRP";
-  a3_offset = 6;          # dB de marge
+  a3_offset = 6;          # dB margin
   a3_hysteresis = 0;
-  a3_time_to_trigger = 480;  # ms avant déclenchement
+  a3_time_to_trigger = 480;  # ms before triggering
 };
 ```
 
-## 📡 Séquence S1 Handover (3GPP TS 23.401)
+## 📡 S1 Handover Sequence (3GPP TS 23.401)
 
 ```
-    UE          eNB Source       MME         eNB Target
+    UE          Source eNB       MME         Target eNB
      │               │            │               │
      │◄─────────────►│            │               │
      │  Measurement  │            │               │
@@ -181,7 +181,7 @@ meas_report_desc =
      │               │  Release  │               │
 ```
 
-## 🔍 Logs Attendus (MME)
+## 🔍 Expected Logs (MME)
 
 ```
 HandoverRequest
@@ -193,14 +193,14 @@ UE Context Release
 
 ## 🛠️ Troubleshooting
 
-| Problème | Cause probable | Solution |
-|----------|----------------|----------|
-| Pas de handover | TAC différent | Mettre le même TAC sur les 2 eNB |
-| Handover cancel | Timeout | Augmenter `a3_time_to_trigger` |
-| Appel coupé après HO | Bearer IMS perdu | Vérifier la config QoS |
-| UE ne voit pas la cellule voisine | PCI conflict | Vérifier PCI différents |
+| Issue | Probable Cause | Solution |
+|-------|----------------|----------|
+| No handover | Different TAC | Set same TAC on both eNBs |
+| Handover cancel | Timeout | Increase `a3_time_to_trigger` |
+| Call drops after HO | IMS bearer lost | Check QoS config |
+| UE doesn't see neighbor | PCI conflict | Verify different PCIs |
 
-## 📚 Références 3GPP
+## 📚 3GPP References
 
 - **TS 23.401** — GPRS enhancements for E-UTRAN access
 - **TS 36.413** — S1 Application Protocol (S1AP)
@@ -210,13 +210,13 @@ UE Context Release
 
 ## 📄 License
 
-MIT License — Voir [LICENSE](LICENSE)
+MIT License — See [LICENSE](LICENSE)
 
-## 👤 Auteur
+## 👤 Author
 
 **Arnaud DJOUM** — F2G Telecom Lab  
-[GitHub](https://github.com/arnauddjoum) | Cameroun
+[GitHub](https://github.com/arnauddjoum) | Cameroon
 
 ---
 
-*Testé le 2026-10-01 avec Open5GS v2.7 + srsRAN 23.11 + bladeRF xA4*
+*Tested on 2026-10-01 with Open5GS v2.7 + srsRAN 23.11 + bladeRF xA4*

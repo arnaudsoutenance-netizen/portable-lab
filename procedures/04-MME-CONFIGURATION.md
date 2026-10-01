@@ -1,16 +1,16 @@
-# 04 — Configuration du MME
+# 04 — MME Configuration
 
-## Configuration Open5GS MME
+## Open5GS MME Configuration
 
-### Fichier mme.yaml
+### File: mme.yaml
 
-Le MME doit être configuré pour accepter les 2 eNodeB et supporter le S1 Handover.
+The MME must be configured to accept both eNodeBs and support S1 Handover.
 
 ```yaml
 mme:
   freeDiameter: /etc/freeDiameter/mme.conf
   s1ap:
-    - addr: 192.168.1.102    # IP accessible par les eNB
+    - addr: 192.168.1.102    # IP accessible by eNBs
       port: 36412
   gtpc:
     - addr: 127.0.0.2
@@ -24,7 +24,7 @@ mme:
     plmn_id:
       mcc: 001
       mnc: 01
-    tac: 1                    # ⚠️ Doit correspondre aux eNB
+    tac: 1                    # ⚠️ Must match the eNBs
   security:
     integrity_order: [EIA2, EIA1, EIA0]
     ciphering_order: [EEA0, EEA1, EEA2]
@@ -33,55 +33,55 @@ mme:
   mme_name: open5gs-mme0
 ```
 
-### Points importants
+### Key Points
 
-| Paramètre | Valeur | Description |
-|-----------|--------|-------------|
-| `s1ap.addr` | 192.168.1.102 | IP du MME accessible par les eNB |
-| `tai.tac` | 1 | Doit matcher le TAC des eNB (0x0001) |
-| `plmn_id` | 001/01 | MCC/MNC de votre réseau |
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| `s1ap.addr` | 192.168.1.102 | MME IP accessible by eNBs |
+| `tai.tac` | 1 | Must match eNB TAC (0x0001) |
+| `plmn_id` | 001/01 | Your network MCC/MNC |
 
-## Configuration de l'interface réseau
+## Network Interface Configuration
 
-### Option 1 : macvlan (recommandé)
+### Option 1: macvlan (recommended)
 
 ```bash
-# Créer le réseau macvlan
+# Create macvlan network
 docker network create -d macvlan \
   --subnet=192.168.1.0/24 \
   --gateway=192.168.1.1 \
   -o parent=eth0 \
   macvlan_net
 
-# Connecter le MME au réseau
+# Connect MME to the network
 docker network connect macvlan_net mme --ip 192.168.1.102
 ```
 
-### Option 2 : Host network
+### Option 2: Host network
 
-Dans `docker-compose.yaml` :
+In `docker-compose.yaml`:
 
 ```yaml
 mme:
   network_mode: host
 ```
 
-## Vérification de la configuration
+## Configuration Verification
 
-### 1. Vérifier que le MME écoute sur S1AP
+### 1. Verify MME is listening on S1AP
 
 ```bash
 docker exec mme ss -tlnp | grep 36412
 # LISTEN  0  128  192.168.1.102:36412  *:*
 ```
 
-### 2. Vérifier les logs au démarrage
+### 2. Check startup logs
 
 ```bash
 docker logs mme 2>&1 | head -50
 ```
 
-Output attendu :
+Expected output:
 ```
 Open5GS daemon v2.7.x
 MME initialize...
@@ -90,49 +90,49 @@ GUTI: mcc:001,mnc:01,mme_gid:2,mme_code:1
 TAI: mcc:001,mnc:01,tac:1
 ```
 
-### 3. Vérifier la connexion Diameter (HSS)
+### 3. Verify Diameter connection (HSS)
 
 ```bash
 docker logs mme 2>&1 | grep -i diameter
 # CONNECTED TO 'hss.epc.mnc001.mcc001.3gppnetwork.org'
 ```
 
-## Configuration du TAC
+## TAC Configuration
 
-⚠️ **Le TAC est critique pour le Handover**
+⚠️ **TAC is critical for Handover**
 
-Le TAC configuré dans le MME doit correspondre au TAC des eNodeB :
+The TAC configured in MME must match the eNodeB TAC:
 
 ```
 MME (tai.tac)     = 1      (0x0001)
 eNB1 (cell.tac)   = 0x0001 ✅
-eNB2 (cell.tac)   = 0x0001 ✅  <- Doit être identique !
+eNB2 (cell.tac)   = 0x0001 ✅  <- Must be identical!
 ```
 
-### Erreur commune
+### Common Error
 
-Si eNB2 a un TAC différent (ex: 0x0002), l'UE fera un **TAU (Tracking Area Update)** au lieu d'un **Handover**, ce qui peut couper l'appel VoLTE.
+If eNB2 has a different TAC (e.g., 0x0002), the UE will perform a **TAU (Tracking Area Update)** instead of a **Handover**, which may drop the VoLTE call.
 
-## Redémarrage du MME
+## Restarting the MME
 
-Après modification de la config :
+After modifying the config:
 
 ```bash
-# Redémarrer
+# Restart
 docker restart mme
 
-# Vérifier
+# Verify
 docker logs -f mme 2>&1 | head -30
 ```
 
-## Vérification des eNB connectés
+## Verify Connected eNBs
 
 ```bash
-# Écouter les connexions S1
+# Monitor S1 connections
 docker logs -f mme 2>&1 | grep -iE "eNB|Number"
 ```
 
-Output attendu :
+Expected output:
 ```
 eNB-S1 accepted[192.168.1.100]:xxxxx in s1_path module
 eNB-S1 accepted[192.168.1.100] in master_sm module
@@ -142,16 +142,16 @@ eNB-S1 accepted[192.168.1.101] in master_sm module
 [Added] Number of eNBs is now 2
 ```
 
-## Configuration IMS pour VoLTE
+## IMS Configuration for VoLTE
 
-### Vérifier la connexion PCRF ↔ P-CSCF
+### Verify PCRF ↔ P-CSCF connection
 
 ```bash
 docker logs pcrf 2>&1 | grep -i connected
 # CONNECTED TO 'pcscf.ims.mnc001.mcc001.3gppnetwork.org'
 ```
 
-### Vérifier les subscribers IMS
+### Verify IMS subscribers
 
 ```bash
 docker exec mysql mysql -u root -proot -e \
@@ -160,4 +160,4 @@ docker exec mysql mysql -u root -proot -e \
 
 ---
 
-➡️ **Étape suivante** : [05-TEST-HANDOVER.md](05-TEST-HANDOVER.md)
+➡️ **Next Step**: [05-HANDOVER-TESTING.md](05-HANDOVER-TESTING.md)

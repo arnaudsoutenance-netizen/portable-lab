@@ -1,20 +1,20 @@
-# 03 — Configuration des eNodeB
+# 03 — eNodeB Configuration
 
-## Paramètres critiques pour le S1 Handover
+## Critical Parameters for S1 Handover
 
-⚠️ **IMPORTANT** : Pour que le S1 Handover fonctionne correctement :
+⚠️ **IMPORTANT**: For S1 Handover to work correctly:
 
-| Paramètre | Règle | Raison |
-|-----------|-------|--------|
-| `tac` | **IDENTIQUE** sur les 2 eNB | Même Tracking Area |
-| `pci` | **DIFFÉRENT** sur chaque eNB | Identification unique |
-| `dl_earfcn` | **IDENTIQUE** | Handover intra-frequency |
-| `enb_id` | **DIFFÉRENT** | Identification S1AP |
-| `cell_id` | **DIFFÉRENT** | Identification cellule |
+| Parameter | Rule | Reason |
+|-----------|------|--------|
+| `tac` | **IDENTICAL** on both eNBs | Same Tracking Area |
+| `pci` | **DIFFERENT** on each eNB | Unique identification |
+| `dl_earfcn` | **IDENTICAL** | Intra-frequency handover |
+| `enb_id` | **DIFFERENT** | S1AP identification |
+| `cell_id` | **DIFFERENT** | Cell identification |
 
-## Configuration eNB1 (PC1 — 192.168.1.100)
+## eNB1 Configuration (PC1 — 192.168.1.100)
 
-### Fichier enb1_handover.conf
+### File: enb1_handover.conf
 
 ```ini
 [enb]
@@ -45,7 +45,7 @@ filename = /tmp/enb1.log
 file_max_size = -1
 ```
 
-### Fichier rr_enb1_ho.conf
+### File: rr_enb1_ho.conf
 
 ```conf
 mac_cnfg =
@@ -97,39 +97,39 @@ cell_list =
 (
   {
     cell_id = 0x01;
-    tac = 0x0001;           // ⚠️ DOIT être identique à eNB2
-    pci = 1;                // ⚠️ DOIT être différent de eNB2
+    tac = 0x0001;           // ⚠️ MUST be identical to eNB2
+    pci = 1;                // ⚠️ MUST be different from eNB2
     root_seq_idx = 204;
-    dl_earfcn = 1450;       // ⚠️ DOIT être identique à eNB2
+    dl_earfcn = 1450;       // ⚠️ MUST be identical to eNB2
 
     // === HANDOVER CONFIG ===
     ho_active = true;
     
-    // Liste des cellules voisines
+    // Neighbor cell list
     meas_cell_list =
     (
       { 
-        eci = 0x19C01;      // Cell ID de eNB2 (enb_id << 8 | cell_id)
+        eci = 0x19C01;      // Cell ID of eNB2 (enb_id << 8 | cell_id)
         dl_earfcn = 1450; 
-        pci = 2;            // PCI de eNB2
+        pci = 2;            // PCI of eNB2
       }
     );
     
-    // Configuration A3 Event (déclenchement handover)
+    // A3 Event configuration (handover trigger)
     meas_report_desc =
     {
       a3_report_type = "RSRP";
-      a3_offset = 6;              // Seuil en dB
+      a3_offset = 6;              // Threshold in dB
       a3_hysteresis = 0;
-      a3_time_to_trigger = 480;   // Délai en ms
+      a3_time_to_trigger = 480;   // Delay in ms
     };
   }
 );
 ```
 
-## Configuration eNB2 (PC2 — 192.168.1.101)
+## eNB2 Configuration (PC2 — 192.168.1.101)
 
-### Fichier enb2_handover.conf
+### File: enb2_handover.conf
 
 ```ini
 [enb]
@@ -160,42 +160,42 @@ filename = /tmp/enb2.log
 file_max_size = -1
 ```
 
-### Fichier rr_enb2_ho.conf
+### File: rr_enb2_ho.conf
 
 ```conf
 mac_cnfg =
 {
-  // ... (identique à eNB1)
+  // ... (same as eNB1)
 };
 
 phy_cnfg =
 {
-  // ... (identique à eNB1)
+  // ... (same as eNB1)
 };
 
 cell_list =
 (
   {
     cell_id = 0x01;
-    tac = 0x0001;           // ⚠️ IDENTIQUE à eNB1
-    pci = 2;                // ⚠️ DIFFÉRENT de eNB1
-    root_seq_idx = 205;     // Différent pour éviter collision PRACH
-    dl_earfcn = 1450;       // ⚠️ IDENTIQUE à eNB1
+    tac = 0x0001;           // ⚠️ IDENTICAL to eNB1
+    pci = 2;                // ⚠️ DIFFERENT from eNB1
+    root_seq_idx = 205;     // Different to avoid PRACH collision
+    dl_earfcn = 1450;       // ⚠️ IDENTICAL to eNB1
 
     // === HANDOVER CONFIG ===
     ho_active = true;
     
-    // Liste des cellules voisines
+    // Neighbor cell list
     meas_cell_list =
     (
       { 
-        eci = 0x19B01;      // Cell ID de eNB1
+        eci = 0x19B01;      // Cell ID of eNB1
         dl_earfcn = 1450; 
-        pci = 1;            // PCI de eNB1
+        pci = 1;            // PCI of eNB1
       }
     );
     
-    // Configuration A3 Event
+    // A3 Event configuration
     meas_report_desc =
     {
       a3_report_type = "RSRP";
@@ -207,9 +207,9 @@ cell_list =
 );
 ```
 
-## Tableau récapitulatif
+## Summary Table
 
-| Paramètre | eNB1 (PC1) | eNB2 (PC2) |
+| Parameter | eNB1 (PC1) | eNB2 (PC2) |
 |-----------|------------|------------|
 | IP | 192.168.1.100 | 192.168.1.101 |
 | enb_id | 0x19B | 0x19C |
@@ -221,7 +221,7 @@ cell_list =
 | root_seq_idx | 204 | 205 |
 | ho_active | true | true |
 
-## Démarrage des eNodeB
+## Starting the eNodeBs
 
 ### PC1
 
@@ -237,9 +237,9 @@ cd /tmp
 sudo srsenb enb2_handover.conf
 ```
 
-## Vérification
+## Verification
 
-### Logs MME — Les 2 eNB doivent être connectés
+### MME Logs — Both eNBs must be connected
 
 ```bash
 docker logs mme 2>&1 | grep "Number of eNBs"
@@ -247,7 +247,7 @@ docker logs mme 2>&1 | grep "Number of eNBs"
 # [Added] Number of eNBs is now 2
 ```
 
-### Logs eNB — Connexion S1 établie
+### eNB Logs — S1 connection established
 
 ```
 S1 Setup procedure
@@ -256,4 +256,4 @@ S1 Setup Response received
 
 ---
 
-➡️ **Étape suivante** : [04-CONFIGURATION-MME.md](04-CONFIGURATION-MME.md)
+➡️ **Next Step**: [04-MME-CONFIGURATION.md](04-MME-CONFIGURATION.md)

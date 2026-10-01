@@ -1,8 +1,8 @@
 # 02 — Installation
 
-## Installation srsRAN sur PC1 et PC2
+## srsRAN Installation on PC1 and PC2
 
-### 1. Cloner le repository
+### 1. Clone the Repository
 
 ```bash
 cd ~
@@ -10,7 +10,7 @@ git clone https://github.com/srsran/srsRAN_4G.git
 cd srsRAN_4G
 ```
 
-### 2. Installer les dépendances
+### 2. Install Dependencies
 
 ```bash
 sudo apt update
@@ -28,7 +28,7 @@ sudo apt install -y \
     libbladerf2
 ```
 
-### 3. Compiler srsRAN
+### 3. Compile srsRAN
 
 ```bash
 mkdir build && cd build
@@ -38,7 +38,7 @@ sudo make install
 sudo ldconfig
 ```
 
-### 4. Vérifier l'installation
+### 4. Verify Installation
 
 ```bash
 which srsenb
@@ -48,34 +48,34 @@ srsenb --version
 # srsRAN release 23.xx
 ```
 
-## Installation des configs Handover
+## Install Handover Configurations
 
-### Sur PC1 (eNB1)
+### On PC1 (eNB1)
 
 ```bash
-# Copier les fichiers de config
+# Copy config files
 sudo mkdir -p /etc/srsran
 sudo cp configs/enb1/* /etc/srsran/
 
-# Ou utiliser /tmp pour les tests
+# Or use /tmp for testing
 cp configs/enb1/enb1_handover.conf /tmp/
 cp configs/enb1/rr_enb1_ho.conf /tmp/
 ```
 
-### Sur PC2 (eNB2)
+### On PC2 (eNB2)
 
 ```bash
-# Copier via SCP depuis PC1
+# Copy via SCP from PC1
 scp -r configs/enb2/* f2g@192.168.1.101:/tmp/
 
-# Ou copier manuellement
+# Or copy manually
 sudo mkdir -p /etc/srsran
 cp configs/enb2/* /etc/srsran/
 ```
 
-## Installation Open5GS + IMS (si pas déjà fait)
+## Open5GS + IMS Installation (if not already done)
 
-### 1. Cloner le repo VoicenterTeam
+### 1. Clone VoicenterTeam Repo
 
 ```bash
 cd ~/Telecom/Core-Network
@@ -83,70 +83,70 @@ git clone https://github.com/VoicenterTeam/openimss.git
 cd openimss
 ```
 
-### 2. Configurer le MME
+### 2. Configure the MME
 
-Éditer `mme/mme.yaml` :
+Edit `mme/mme.yaml`:
 
 ```yaml
 mme:
   s1ap:
-    - addr: 192.168.1.102  # IP accessible par les eNB
+    - addr: 192.168.1.102  # IP accessible by eNBs
   
   tai:
     - plmn_id:
         mcc: 001
         mnc: 01
-      tac: 1  # TAC doit matcher les eNB
+      tac: 1  # TAC must match eNBs
 ```
 
-### 3. Démarrer les containers
+### 3. Start Containers
 
 ```bash
 docker-compose up -d
 
-# Vérifier
+# Verify
 docker ps
 docker logs mme | tail -20
 ```
 
-### 4. Créer l'interface macvlan (si nécessaire)
+### 4. Create macvlan Interface (if needed)
 
 ```bash
-# Pour exposer le MME sur le réseau physique
+# To expose MME on physical network
 docker network create -d macvlan \
   --subnet=192.168.1.0/24 \
   --gateway=192.168.1.1 \
   -o parent=eth0 \
   macvlan_net
 
-# Connecter le MME
+# Connect MME
 docker network connect macvlan_net mme --ip 192.168.1.102
 ```
 
-## Vérification de l'installation
+## Installation Verification
 
-### Test de connectivité S1
+### S1 Connectivity Test
 
 ```bash
-# Sur PC1
+# From PC1
 nc -zv 192.168.1.102 36412
 # Connection to 192.168.1.102 36412 port [tcp/*] succeeded!
 ```
 
-### Test bladeRF
+### bladeRF Test
 
 ```bash
-# Sur chaque PC
+# On each PC
 bladeRF-cli -p
 
-# Doit retourner quelque chose comme:
+# Should return something like:
 #   Backend:        libusb
 #   Serial:         abc123...
 #   USB Bus:        1
 #   USB Address:    5
 ```
 
-### Test containers IMS
+### IMS Container Test
 
 ```bash
 docker logs pcscf 2>&1 | tail -5
@@ -154,7 +154,7 @@ docker logs scscf 2>&1 | tail -5
 docker logs icscf 2>&1 | tail -5
 ```
 
-## Arborescence après installation
+## Directory Structure After Installation
 
 ```
 PC1 (/tmp/)
@@ -184,4 +184,4 @@ Core Network (Docker)
 
 ---
 
-➡️ **Étape suivante** : [03-CONFIGURATION-ENB.md](03-CONFIGURATION-ENB.md)
+➡️ **Next Step**: [03-ENB-CONFIGURATION.md](03-ENB-CONFIGURATION.md)
